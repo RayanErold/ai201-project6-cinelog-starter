@@ -1,7 +1,7 @@
 # PR Response Doc — CineLog Watchlist Feature
 
 ## AI Usage
-<!-- Fill in at the end — how you used AI tools during this project -->
+I pair-programmed with Google Antigravity (a powerful agentic AI coding assistant). The AI helped inspect files, perform project-wide regex/grep searches, write unit tests following existing patterns, update SQL schemas for UUID migration, perform git interactive rebasing and force-pushing, and ensure conventional commit formats.
 
 ## Comment 1 — Rename
 **What I did:**
@@ -53,8 +53,32 @@ I agree with the reviewer's feedback. Alphabetical sorting made the watchlist fe
 
 ## Comment 6 — Rebase
 **What conflicted:**
+- **.gitignore**: Both the `main` branch and our feature branch added new rules to `.gitignore` concurrently, leading to an `add/add` conflict.
+- **models.py**: A conflict occurred when applying the changes to `models.py` because the `main` branch migrated film IDs from `db.Integer` to `db.String(36)` (UUID) whereas our branch defined `WatchlistEntry` using `db.Integer` for `film_id`.
+
 **How I resolved it:**
+- For `.gitignore`, resolved it by preserving our more comprehensive ruleset and removing git conflict markers.
+- For `models.py`, resolved it by keeping the `WatchlistEntry` class definition and updating the type of its `film_id` foreign key column from `db.Integer` to `db.String(36)` (UUID) to align with the database changes on the `main` branch.
+- Updated all related docstrings in `services/watchlist_service.py` and `routes/watchlist/watchlist.py`, and updated `test_add_to_watchlist_nonexistent_film_raises` in `tests/test_watchlist.py` to use a string UUID instead of `999999`.
+
 **How I verified no conflict remains:**
+- Successfully completed the git rebase.
+- Verified that `git status` reports a clean working tree.
+- Executed the `pytest` test suite, confirming all 8 tests pass successfully.
 
 ## PR Description
-<!-- Written at the end — feature overview, design decisions, manual testing steps -->
+### Feature Overview
+Adds a watchlist feature to CineLog, enabling users to save movies they want to watch later. Users can retrieve their watchlist via `GET /watchlist/<user_id>` and add movies via `POST /watchlist/<user_id>/add`.
+
+### Key Design Decisions
+- **Naming Conventions**: Renamed `save_to_watchlist` to `add_to_watchlist` to follow the codebase's `verb_to_noun` service naming patterns (aligning with `add_to_collection`).
+- **Deduplication**: Implemented service-level and database-level unique checks (`AlreadyInWatchlistError`) to prevent users from adding duplicate watchlist entries.
+- **Default Visibility (Privacy by Design)**: Set the default visibility of watchlist entries to private (`public=False`). Users must explicitly opt-in to share their lists, protecting user data by default.
+- **Sort Order**: Watchlists default to sorting by `date_added` descending (most recently saved first) to highlight immediate user interest, matching the behavior of `get_collection`.
+- **Database Schema (UUID Migration)**: Refactored `WatchlistEntry.film_id` to use a `db.String(36)` type (UUID) to resolve conflicts and successfully rebase onto the migrated `main` branch.
+
+### Manual Testing Steps
+1. Create a User and a Film (with a UUID ID) in the database.
+2. Send a `POST` request to `/watchlist/<user_id>/add` with JSON body `{"film_id": "<film_uuid>"}`. Verify it returns `201 Created` with the serialized watchlist entry.
+3. Send the exact same `POST` request again and verify it yields a `409 Conflict` response with an appropriate error message (verifying deduplication).
+4. Send a `GET` request to `/watchlist/<user_id>`. Verify it returns a list of saved films, sorted by `date_added` descending, with `public` set to `False` by default.
