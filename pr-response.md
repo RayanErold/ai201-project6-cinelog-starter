@@ -67,21 +67,53 @@ I agree with the reviewer's feedback. Alphabetical sorting made the watchlist fe
 - Executed the `pytest` test suite, confirming all 8 tests pass successfully.
 
 ## PR Description
-### Feature Overview
-Adds a watchlist feature to CineLog, enabling users to save movies they want to watch later. Users can retrieve their watchlist via `GET /watchlist/<user_id>` and add movies via `POST /watchlist/<user_id>/add`.
 
-### Key Design Decisions
-- **Naming Conventions**: Renamed `save_to_watchlist` to `add_to_watchlist` to follow the codebase's `verb_to_noun` service naming patterns (aligning with `add_to_collection`).
-- **Deduplication**: Implemented service-level and database-level unique checks (`AlreadyInWatchlistError`) to prevent users from adding duplicate watchlist entries.
-- **Default Visibility (Privacy by Design)**: Set the default visibility of watchlist entries to private (`public=False`). Users must explicitly opt-in to share their lists, protecting user data by default.
-- **Sort Order**: Watchlists default to sorting by `date_added` descending (most recently saved first) to highlight immediate user interest, matching the behavior of `get_collection`.
-- **Database Schema (UUID Migration)**: Refactored `WatchlistEntry.film_id` to use a `db.String(36)` type (UUID) to resolve conflicts and successfully rebase onto the migrated `main` branch.
+### 1. Feature Overview
+This Pull Request introduces the **Watchlist Feature** to CineLog. It enables users to curate a list of films they intend to watch later. 
 
-### Manual Testing Steps
-1. Create a User and a Film (with a UUID ID) in the database.
-2. Send a `POST` request to `/watchlist/<user_id>/add` with JSON body `{"film_id": "<film_uuid>"}`. Verify it returns `201 Created` with the serialized watchlist entry.
-3. Send the exact same `POST` request again and verify it yields a `409 Conflict` response with an appropriate error message (verifying deduplication).
-4. Send a `GET` request to `/watchlist/<user_id>`. Verify it returns a list of saved films, sorted by `date_added` descending, with `public` set to `False` by default.
+Specifically, this PR adds:
+*   **Database Schema**: A new `WatchlistEntry` junction model linking users to their saved films.
+*   **Service Layer**: Functions to add, fetch, and validate watchlist entries.
+*   **API Blueprints/Endpoints**:
+    *   `POST /watchlist/<user_id>/add` — Save a film to the user's watchlist.
+    *   `GET /watchlist/<user_id>` — Retrieve a user's watchlist.
+
+---
+
+### 2. Key Design Decisions
+
+*   **Default Visibility (Privacy by Design)**:
+    We decided that watchlist entries should default to private (`public=False`). This ensures that user preferences and watch intent remain confidential out-of-the-box. Users must explicitly opt-in to share their watchlists publicly rather than having their data exposed by default.
+    *Trade-off*: While this might slightly reduce organic social sharing and film discovery inside the community, protecting user privacy by default is paramount for building trust.
+
+*   **Sorting Order (Date Added Descending)**:
+    The watchlist defaults to sorting by `date_added` in descending order (most recently added first). This ensures the watchlist is dynamic and presents the user's most immediate interests at the top of their queue.
+    *Consistency*: This matches the sorting behavior of the logged film collection (`get_collection`), establishing a uniform API design pattern across different features.
+
+---
+
+### 3. Step-by-Step Manual Testing Instructions
+
+To verify the feature end-to-end, follow these manual testing steps:
+
+1.  **Bootstrap Test Data**:
+    *   Create a User record.
+    *   Create a Film record (ensure it uses a UUID string as the ID).
+2.  **Test Adding to Watchlist (Happy Path)**:
+    *   Send a `POST` request to `/watchlist/<user_id>/add` with JSON body:
+        ```json
+        {
+          "film_id": "<film_uuid>"
+        }
+        ```
+    *   *Expected Result*: Returns status `201 Created` with the JSON payload of the created `WatchlistEntry` (verifying `public` is `false` by default).
+3.  **Test Deduplication (Conflict Path)**:
+    *   Send the identical `POST` request to `/watchlist/<user_id>/add` a second time.
+    *   *Expected Result*: Returns status `409 Conflict` containing the error message: `{"error": "Film '<film_uuid>' is already in this user's watchlist"}`.
+4.  **Test Fetching Watchlist (Sorting & Visibility)**:
+    *   Add a second film to the user's watchlist.
+    *   Send a `GET` request to `/watchlist/<user_id>`.
+    *   *Expected Result*: Returns status `200 OK` with a list of the watchlisted films. The film added most recently must appear first in the JSON array, and each entry should reflect `public: false` visibility.
 
 ---
 
