@@ -43,8 +43,13 @@ This decision may reduce spontaneous social discovery and sharing within the com
 
 ## Comment 5 — Sort order
 **My position:**
+Watchlists should default to "date added" order (descending, recently added first) rather than alphabetical.
+
 **Reasoning:**
+A default of "date added" (descending) highlights the user's most recent interests, which aligns with standard user behavior in other media tracking applications (e.g. Letterboxd, streaming services). It also matches the sorting order of the logged collection (`get_collection`), making the API consistent.
+
 **Engagement with reviewer's point:**
+I agree with the reviewer's feedback. Alphabetical sorting made the watchlist feel static. We have updated [services/watchlist_service.py](file:///C:/Users/Erold%20Rayan/Downloads/AI201-Summer%20Program/Module%202/Week%206/ai201-project6-cinelog-starter/services/watchlist_service.py) to use `.order_by(WatchlistEntry.date_added.desc())`. During implementation, we discovered and resolved a missing database relationship in [models.py](file:///C:/Users/Erold%20Rayan/Downloads/AI201-Summer%20Program/Module%202/Week%206/ai201-project6-cinelog-starter/models.py) that caused an `AttributeError` when accessing `entry.film`, and added a new unit test `test_get_watchlist_returns_newest_first` to verify the sorting behavior.
 
 ## Comment 6 — Rebase
 **What conflicted:**
