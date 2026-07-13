@@ -33,8 +33,13 @@
 
 ## Comment 4 — Default visibility
 **My position:**
+Watchlist entries should default to private (`public=False`) instead of public.
+
 **Reasoning:**
+Privacy by Design: User preferences and intents, such as saving a film to watch later, should remain confidential by default. Users should explicitly opt-in to share their watchlist data publicly rather than having their data exposed automatically without active consent.
+
 **Tradeoff acknowledged:**
+This decision may reduce spontaneous social discovery and sharing within the community, as many users tend to stick with default settings. However, protecting user privacy by default is a higher priority for user trust.
 
 ## Comment 5 — Sort order
 **My position:**
