@@ -82,3 +82,7 @@ Adds a watchlist feature to CineLog, enabling users to save movies they want to 
 2. Send a `POST` request to `/watchlist/<user_id>/add` with JSON body `{"film_id": "<film_uuid>"}`. Verify it returns `201 Created` with the serialized watchlist entry.
 3. Send the exact same `POST` request again and verify it yields a `409 Conflict` response with an appropriate error message (verifying deduplication).
 4. Send a `GET` request to `/watchlist/<user_id>`. Verify it returns a list of saved films, sorted by `date_added` descending, with `public` set to `False` by default.
+
+---
+
+![Rebase screenshot](Screenshot 2026-07-13 014225.png)
